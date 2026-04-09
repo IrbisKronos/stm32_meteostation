@@ -2,10 +2,3 @@
 Debug/
 Release/
 build/
-
-# IDE artifacts (опційно — деякі залишають для зручності)
-.settings/
-
-# OS
-Thumbs.db
-.DS_Store
