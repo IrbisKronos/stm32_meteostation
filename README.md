@@ -4,8 +4,8 @@
 
 ## Фото
 
-![Зібрана схема](docs/images/hardware.gif)
-![Дисплей з даними](docs/images/display.jpg)
+![Зібрана схема](docs/images/hardware.jpg)
+![Дисплей з даними](docs/images/display.gif)
 
 ## Можливості
 
