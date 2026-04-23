@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -45,6 +46,8 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+SPI_HandleTypeDef hspi1;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -59,6 +62,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -78,9 +82,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -102,32 +103,32 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_I2C1_Init();
+  MX_SPI1_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+/* --- Ініціалізація OLED --- */
+if (SSD1306_Init(&oled, &hi2c1) == HAL_OK) {
+    HAL_UART_Transmit(&huart1, (uint8_t*)"OLED OK\r\n", 9, 100);
+} else {
+    HAL_UART_Transmit(&huart1, (uint8_t*)"OLED FAIL\r\n", 11, 100);
+}
 
-  /* --- Ініціалізація OLED --- */
-  if (SSD1306_Init(&oled, &hi2c1) == HAL_OK) {
-      HAL_UART_Transmit(&huart1, (uint8_t*)"OLED OK\r\n", 9, 100);
-  } else {
-      HAL_UART_Transmit(&huart1, (uint8_t*)"OLED FAIL\r\n", 11, 100);
-  }
+/* --- Ініціалізація BME280 --- */
+if (BME280_Init(&bme280, &hi2c1) == HAL_OK) {
+    HAL_UART_Transmit(&huart1, (uint8_t*)"BME280 OK\r\n", 11, 100);
+} else {
+    HAL_UART_Transmit(&huart1, (uint8_t*)"BME280 FAIL\r\n", 13, 100);
+}
 
-  /* --- Ініціалізація BME280 --- */
-  if (BME280_Init(&bme280, &hi2c1) == HAL_OK) {
-      HAL_UART_Transmit(&huart1, (uint8_t*)"BME280 OK\r\n", 11, 100);
-  } else {
-      HAL_UART_Transmit(&huart1, (uint8_t*)"BME280 FAIL\r\n", 13, 100);
-  }
-
-  /* --- Стартовий екран --- */
-  SSD1306_Clear(&oled);
-  SSD1306_SetCursor(&oled, 20, 0);
-  SSD1306_WriteString(&oled, "MeteoStation", SSD1306_COLOR_WHITE);
-  SSD1306_DrawHLine(&oled, 0, 10, 128, SSD1306_COLOR_WHITE);
-  SSD1306_SetCursor(&oled, 15, 28);
-  SSD1306_WriteString(&oled, "Starting...", SSD1306_COLOR_WHITE);
-  SSD1306_UpdateScreen(&oled);
-  HAL_Delay(1500);
-
+/* --- Стартовий екран --- */
+SSD1306_Clear(&oled);
+SSD1306_SetCursor(&oled, 20, 0);
+SSD1306_WriteString(&oled, "MeteoStation", SSD1306_COLOR_WHITE);
+SSD1306_DrawHLine(&oled, 0, 10, 128, SSD1306_COLOR_WHITE);
+SSD1306_SetCursor(&oled, 15, 28);
+SSD1306_WriteString(&oled, "Starting...", SSD1306_COLOR_WHITE);
+SSD1306_UpdateScreen(&oled);
+HAL_Delay(1500);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -137,7 +138,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-	  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 	    if (BME280_ReadAll(&bme280, &sensorData) == HAL_OK) {
 
 	        /* --- Оновити OLED --- */
@@ -271,6 +272,44 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -324,12 +363,22 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(CD_CS_GPIO_Port, CD_CS_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : CD_CS_Pin */
+  GPIO_InitStruct.Pin = CD_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(CD_CS_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
