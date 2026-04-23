@@ -129,6 +129,34 @@ SSD1306_SetCursor(&oled, 15, 28);
 SSD1306_WriteString(&oled, "Starting...", SSD1306_COLOR_WHITE);
 SSD1306_UpdateScreen(&oled);
 HAL_Delay(1500);
+
+/* --- SD-карта: тест запису --- */
+FATFS fs;
+FIL fil;
+FRESULT fr;
+UINT bw;
+char dbg[48];
+
+/* Крок 1: низькорівнева ініціалізація диска */
+DSTATUS dstat = disk_initialize(0);
+sprintf(dbg, "disk_init: 0x%02X\r\n", dstat);
+HAL_UART_Transmit(&huart1, (uint8_t*)dbg, strlen(dbg), 100);
+
+/* Крок 2: монтування ФС */
+fr = f_mount(&fs, "", 1);
+sprintf(dbg, "f_mount: %d\r\n", fr);
+HAL_UART_Transmit(&huart1, (uint8_t*)dbg, strlen(dbg), 100);
+
+if (fr == FR_OK) {
+    fr = f_open(&fil, "test.txt", FA_CREATE_ALWAYS | FA_WRITE);
+    sprintf(dbg, "f_open: %d\r\n", fr);
+    HAL_UART_Transmit(&huart1, (uint8_t*)dbg, strlen(dbg), 100);
+    if (fr == FR_OK) {
+        f_write(&fil, "SD OK\r\n", 7, &bw);
+        f_close(&fil);
+        HAL_UART_Transmit(&huart1, (uint8_t*)"SD write OK\r\n", 13, 100);
+    }
+}
   /* USER CODE END 2 */
 
   /* Infinite loop */
